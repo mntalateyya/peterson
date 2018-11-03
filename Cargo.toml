@@ -1,0 +1,7 @@
+[package]
+name = "peterson"
+version = "0.1.0"
+authors = ["Mohammed Alateyya <mnur@cmu.edu>"]
+edition = "2018"
+
+[dependencies]
