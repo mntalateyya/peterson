@@ -13,10 +13,12 @@ mod test {
     fn test_undirected() {
         use super::*;
         let mut g: Graph<i32, (), _> = Graph::new(false);
-        g.add_edge((0, 1), ());
-        g.add_edge((1, 2), ());
-        g.add_edge((2, 3), ());
-        g.add_edge((3, 1), ());
+        g.add_edge_list(vec![
+            ((0, 1), ()),
+            ((1, 2), ()),
+            ((2, 3), ()),
+            ((3, 1), ()),
+        ]);
         assert_eq!(g.find_edge((0, 1)), Some(&()));
         assert_eq!(g.find_edge((1, 2)), Some(&()));
         assert_eq!(g.find_edge((2, 3)), Some(&()));
@@ -38,10 +40,12 @@ mod test {
     fn test_directed() {
         use super::Graph;
         let mut g = Graph::new(true);
-        g.add_edge((0, 1), ());
-        g.add_edge((1, 2), ());
-        g.add_edge((2, 3), ());
-        g.add_edge((3, 1), ());
+        g.add_edge_list(vec![
+            ((0, 1), ()),
+            ((1, 2), ()),
+            ((2, 3), ()),
+            ((3, 1), ()),
+        ]);
         assert_eq!(g.find_edge((0, 1)), Some(&()));
         assert_eq!(g.find_edge((1, 2)), Some(&()));
         assert_eq!(g.find_edge((2, 3)), Some(&()));
@@ -57,6 +61,11 @@ mod test {
         assert_eq!(g.find_edge((3, 4)), None);
         assert_eq!(g.find_edge((4, 3)), None);
         assert_eq!(g.find_edge((4, 5)), None);
+    }
+
+    #[test]
+    fn test_search() {
+
     }
 }
 
@@ -124,6 +133,13 @@ where
             .unwrap()
     }
 
+    pub fn add_edge_list<T>(&mut self, list: T)
+    where T: IntoIterator<Item=((V,V),E)> {
+        for (pair, e) in list {
+            self.add_edge(pair, e);
+        }
+    }
+
     pub fn find_edge(&self, (u, v): (V, V)) -> Option<&E> {
         let (u, v) = if !self.directed && u > v {
             (v, u)
@@ -184,7 +200,7 @@ where
 
     fn create_trav<'a>(&'a self, v: V, method: TraverseMethod) -> Traverse<'a,V,E,S> {
         if self.node_tables.get(&v).is_none() {
-            panic!("Called DFS with non-existant vertix")
+            panic!("non-existant vertex")
         }
         Traverse {
             visited: {
