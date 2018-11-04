@@ -1,6 +1,6 @@
 use std::{
     collections::{
-        hash_map::RandomState, 
+        hash_map::RandomState,
         HashMap,
         VecDeque
     },
@@ -65,7 +65,11 @@ mod test {
 
     #[test]
     fn test_search() {
-
+        use super::Graph;
+        let mut g = Graph::new(true);
+        g.add_edge_list(vec![
+            ((0, 1), ()),
+        ]);
     }
 }
 
@@ -172,12 +176,14 @@ enum TraverseMethod {
     DFS,
 }
 
+/// The search queue for running DFS or BFS on a graph
 pub struct Traverse<'a, V, E, S>
 where
     V: Copy + Hash + Eq + Ord,
     E: Edge,
     S: BuildHasher,
 {
+    /// parent in search tree
     back_ptr: HashMap<V, V, S>,
     search_queue: VecDeque<V>,
     graph: &'a Graph<V, E, S>,
@@ -196,6 +202,25 @@ where
 
     pub fn bfs<'a>(&'a self, v: V) -> Traverse<'a, V, E, S> {
         self.create_trav(v, TraverseMethod::BFS)
+    }
+
+    /// find an s-t path in self using DFS.
+    pub fn find_path(&self, s: V, t: V) -> Option<Vec<V>> {
+        let mut iter = self.dfs(s);
+        let back_ptr = loop {
+            // If none, finished connected comp. => no path
+            if iter.next()? == t {
+                break iter.back_ptr
+            }
+        };
+        // follow back pointers to get path
+        let mut v = Vec::new();
+        let mut node = t;
+        while back_ptr[&node] != node {
+            v.push(node);
+            node = back_ptr[&node];
+        }
+        Some(v)
     }
 
     fn create_trav<'a>(&'a self, v: V, method: TraverseMethod) -> Traverse<'a,V,E,S> {
@@ -231,11 +256,14 @@ where
     type Item = V;
     fn next(&mut self) -> Option<Self::Item> {
         if let TraverseMethod::BFS = self.method {
+            // as a queue
             self.search_queue.pop_front()
         } else {
+            // as a stack
             self.search_queue.pop_back()
         }
         .and_then(|v| {
+            // add children of v to queue if not already visited (have no back pointers yet)
             for u in self.graph.node_tables.get(&v).unwrap().keys() {
                 if self.back_ptr.get(&v).is_none() {
                     self.search_queue.push_back(*u);
