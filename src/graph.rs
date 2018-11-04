@@ -178,7 +178,7 @@ where
     E: Edge,
     S: BuildHasher,
 {
-    visited: HashMap<V, bool, S>,
+    back_ptr: HashMap<V, V, S>,
     search_queue: VecDeque<V>,
     graph: &'a Graph<V, E, S>,
     method: TraverseMethod,
@@ -203,14 +203,12 @@ where
             panic!("non-existant vertex")
         }
         Traverse {
-            visited: {
+            back_ptr: {
                 let mut map = HashMap::with_capacity_and_hasher(
                     self.node_tables.len(),
                     self.hasher.as_ref()(),
                 );
-                for key in self.node_tables.keys() {
-                    map.entry(*key).or_insert(false);
-                }
+                map.entry(v).or_insert(v);
                 map
             },
             search_queue: {
@@ -238,10 +236,10 @@ where
             self.search_queue.pop_back()
         }
         .and_then(|v| {
-            *self.visited.get_mut(&v).unwrap() = true;
             for u in self.graph.node_tables.get(&v).unwrap().keys() {
-                if !self.visited[&v] {
+                if self.back_ptr.get(&v).is_none() {
                     self.search_queue.push_back(*u);
+                    self.back_ptr.entry(*u).or_insert(v);
                 }
             }
             Some(v)
